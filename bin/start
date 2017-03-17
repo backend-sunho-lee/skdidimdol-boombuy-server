@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+
+let forever = require('forever-monitor');
+let path = require('path');
+
+let options = {
+  watch: true,
+  watchDirectory: path.join(__dirname, '..')
+};
+
+let child = new forever.Monitor('www', options);
+
+child.on('watch:restart', function(info) {
+  console.error('===== Restaring script because ' + info.stat + ' changed =====');
+});
+
+child.on('restart', function() {
+  console.error('===== Forever restarting script for ' + child.times + ' time =====');
+});
+
+child.on('exit:code', function(code) {
+  console.error('===== Forever detected script exited with code ' + code + ' =====');
+});
+
+child.start();

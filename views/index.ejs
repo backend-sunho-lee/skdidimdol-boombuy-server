@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= title %></title>
+  <link rel='stylesheet' href='/stylesheets/style.css' />
+  <script>
+    window.onload=function(){
+
+      setTimeout(function(){
+        window.my.end('<%=data.imp_uid%>', '<%=data.merchant_uid%>', <%=data.imp_success%>);
+      }, 1000);
+
+        <%-- window.my.end('<%=data.imp_uid%>', '<%=data.merchant_uid%>', <%=data.imp_success%>); --%>
+    };
+  </script>
+</head>
+<body>
+<h1><%= title %></h1>
+<p>Welcome to <%= title %></p>
+
+<fieldset>
+  <input type="text" name="imp_uid" value="<%= data.imp_uid %>">
+  <input type="text" name="merchant_uid" value="<%= data.merchant_uid %>">
+  <input type="text" name="imp_success" value="<%= data.imp_success %>">
+
+</fieldset>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+**/node_modules/**
+**/logs/**
+**/.git/**
+**/public/**
+**/uploads/**
+*ignore*
+*.logs
+*.gif
+*.jpt
+*.html
+

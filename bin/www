@@ -1,0 +1,129 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../app');
+var debug = require('debug')('boombuy:httpServer');
+var http = require('http');
+var https = require('https');
+var fs = require('fs');       // file stream
+var path = require('path');
+var logger = require('../common/logger');
+
+process.on('exit', function (code) {
+  logger.log('debug', 'About to exit with code: %s', code);
+  logger.log('debug', '=========== SERVICE STOPPED ===========');
+});
+
+logger.log('debug', '========== SERVICE STARTING ==========');
+
+
+/**
+ * Get httpPort & httpsPort from environment and store in Express.
+ */
+
+var httpPort = normalizePort(process.env.HTTP_PORT || '3000');
+app.set('httpPort', httpPort);
+logger.log('debug', 'http port (%d) set ...', httpPort);
+
+var httpsPort = normalizePort(process.env.HTTPS_PORT || '3443');
+app.set('httpsPort', httpsPort);
+logger.log('debug', 'https port (%d) set ...', httpsPort);
+
+
+/**
+ * Create HTTP httpServer.
+ */
+var certPath = path.join(__dirname, '../cert_key/mysite.cert.pem');
+var keyPath = path.join(__dirname, '../cert_key/mysite.key.pem');
+
+var opts = {
+  key: fs.readFileSync(keyPath),
+  cert: fs.readFileSync(certPath)
+};
+
+logger.log('debug', 'cert loaded ... %s', certPath);
+logger.log('debug', 'key loaded ... %s', keyPath);
+
+var httpServer = http.createServer(app);
+var httpsServer = https.createServer(opts, app);
+
+/**
+ * Listen on provided httpPort, on all network interfaces.
+ */
+
+httpServer.listen(httpPort);
+httpServer.on('error', onError);
+httpServer.on('listening', onListening);
+
+httpsServer.listen(httpsPort);
+httpsServer.on('error', onError);
+httpsServer.on('listening', onListening);
+
+/**
+ * Normalize a httpPort/httpsPort into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // httpPort number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP httpServer "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var port = (this === httpServer ? httpPort : httpsPort);
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      logger.log('error', '%s requires elevated privileges', bind);
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      logger.log('error', '%s is already in use', bind);
+      process.exit(1);
+      break;
+    default:
+      logger.log('error', 'Error: %s', error.code);
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP httpServer "listening" event.
+ */
+
+function onListening() {
+  var server = (this === httpServer ? httpServer : httpsServer);
+
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'httpPort ' + addr.port;
+  debug('Listening on ' + bind);
+  logger.log('debug', 'Listening on %s', bind);
+}
