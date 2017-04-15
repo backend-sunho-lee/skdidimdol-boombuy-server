@@ -1,3 +1,6 @@
+.idea*
+cert_key/
+
 # Logs
 logs
 *.log

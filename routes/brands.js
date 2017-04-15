@@ -37,20 +37,52 @@ var upload = multer({
   })
 });
 
-
-//TODO 7번 브랜드 목록 조회 O
+/**
+ * @api {get} /brands Brands listing
+ * @apiName GetBrands
+ * @apiGroup Brands
+ * @apiDescription 브랜드 목록을 조회한다.
+ *
+ * @apiParam {Number} page Page number
+ * @apiParam {Number} rows Number of outputs per page.
+ *
+ * @apiSuccess {String} message Next Page URL
+ * @apiSuccess {Array} result Brands info
+ * @apiSuccessExample Success-Response:
+ *    HTTP/1.1 200 OK
+ *    {
+ *      "message": "다음 페이지 URL"
+ *      "result": [
+ *        {
+ *         "bid": 1   // 브랜드 번호,
+ *         "name": "브랜드 이름",
+ *         "notice": "브랜드 구매 주의사항"
+ *         "location": "브랜드 이미지 사진 URL"
+ *        }, ...
+ *      ]
+ *    }
+ *
+ * @apiUse BadRequest
+ * @apiErrorExample Error-Response:
+ *    HTTP/1.1 400 Bad Request
+ *    {
+ *      "message": "Brand Listing Failed"
+ *    }
+ */
 router.get('/', logRequestParams(), isSecure, function (req, res, next) {
   var page = parseInt(req.query.page);
   var rows = parseInt(req.query.rows);
 
   if (!page || !rows) {
-    err = new Error('브랜드 목록 조회 실패');
+    err = new Error('Brand Listing Failed');
+    err.status = 400;
     return next(err);
   }
 
   Brand.printBrands(page, rows, function (err, brands, msg) {
     if (err || brands.length === 0) {
-      err = new Error('브랜드 목록 조회 실패');
+      err = new Error('Brand Listing Failed');
+      err.status = 400;
       return next(err);
     }
     res.json({
@@ -60,7 +92,42 @@ router.get('/', logRequestParams(), isSecure, function (req, res, next) {
   });
 });
 
-//TODO 8번 브랜드별 상품 목록 조회 O
+/**
+ * @api {get} /brands/:bid Item listing by brand
+ * @apiName GetItemsByBrands
+ * @apiGroup Brands
+ * @apiDescription bid에 해당하는 브랜드의 상품 목록을 조회한다.
+ *
+ * @apiParam {Number} bid Brand number
+ * @apiParam {Number} page Page number
+ * @apiParam {Number} rows Number of outputs per page.
+ *
+ * @apiSuccess {String} message Next Page URL
+ * @apiSuccess {Array} result Brands info
+ * @apiSuccessExample Success-Response:
+ *    HTTP/1.1 200 OK
+ *    {
+ *      "message": "다음 페이지 URL"
+ *      "result": [
+ *        {
+ *          "id": 1   // 상품 번호,
+ *          "bid": 2  // 브랜드 번호,
+ *          "name": "상품 이름",
+ *          "price": 11900   // 상품 가격,
+ *          "detail": "상품정보",
+ *          "notice": "주의사항",
+ *          "location": "상품 이미지 URL"
+ *        }, ...
+ *      ]
+ *    }
+ *
+ * @apiUse BadRequest
+ * @apiErrorExample Error-Response:
+ *    HTTP/1.1 400 Bad Request
+ *    {
+ *      "message": "Item Listing by brand Failed"
+ *    }
+ */
 router.get('/:bid', logRequestParams(), isSecure, function (req, res, next) {
   var page = parseInt(req.query.page);
   var rows = parseInt(req.query.rows);
@@ -68,18 +135,18 @@ router.get('/:bid', logRequestParams(), isSecure, function (req, res, next) {
 
   var pattern = /[0-9]/;
   if (pattern.test(bid) === false) {
-    err = new Error('잘못된 브랜드 번호입니다.');
+    err = new Error('Brand Number is Wrong');
     return next(err);
   }
 
   if (!bid || !page || !rows) {
-    err = new Error('브랜드별 상품 목록 조회 실패');
+    err = new Error('Item Listing by brand Failed');
     return next(err);
   }
 
   Brand.printItemsByBrands(page, rows, bid, function(err, items, msg) {
     if (err || items.length === 0) {
-      err = new Error('브랜드별 상품 목록 조회 실패');
+      err = new Error('Item Listing by brand Failed');
       return next(err);
     } else {
       res.json({

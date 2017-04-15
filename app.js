@@ -1,5 +1,3 @@
-// TODO 주석을 주석답게! 반드시 작성하자 (2017.03.15 09:00 전까지)
-
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
@@ -30,7 +28,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 // uncomment after placing your favicon in /public
-//app.use(favicon(path.join(__dirname, 'public', 'boombuy.png')));
+app.use(favicon(path.join(__dirname, 'public', 'boombuy_logo.png')));
 app.use(bodyParser.json({limit: '5mb'}));         // 지수코드
 app.use(bodyParser.urlencoded({limit: '5mb'}));   // 지수코드
 
@@ -43,7 +41,6 @@ app.use(cookieParser(process.env.SECRET_KEY));
 app.use(session({
   secret: process.env.SECRET_KEY,
   store: new RedisStore({
-    // 하드코딩하지말고 환경변수로 설정하자
     host: "127.0.0.1",
     port: 6379,
     client: redisClient
@@ -55,22 +52,13 @@ app.use(session({
     httpOnly: true,
     secure: true,
     maxAge: 1000* 60 * 60 * 24 * 30
-  } //이 쿠키는 30일간 유효함 (밀리세컨드(1000이 1초), 60초, 60분, 24시간, 30일)
+  }
 }));
 app.use(passport.initialize()); //초기화된 프레임워크에 접근할 수 있는 미들웨어를 반환한다.
 app.use(passport.session()); //이것을 통해 express.session이 관장하는 redis와의 연동이 passport가 역할을 하게 됨
 app.use(express.static(path.join(__dirname, 'public')));
 
-// app.use(function (req, res, next) {
-//   winstonLogger.log('debug', 'access url: %s', req.originalUrl);
-//
-//   if (Object.keys(req.params).length > 0)
-//     winstonLogger.log('debug', 'params: %j', req.params);
-//   if (Object.keys(req.body).length > 0)
-//     winstonLogger.log('debug', 'body : %j', req.body);
-//   next();
-// });
-
+app.use('/api', express.static(path.join(__dirname, 'apidoc')));
 app.use('/', index);
 app.use('/auth', auth);
 app.use('/users', users);
@@ -98,7 +86,7 @@ app.use(function(err, req, res, next) {
   res.json({
     error: {
       message: err.message,
-      status: err.status
+      //status: err.status
     }
   })
 });

@@ -37,19 +37,53 @@ var upload = multer({
   })
 });
 
-//TODO 6번 전체 상품 목록 조회_O
+/**
+ * @api {get} /items Item listing
+ * @apiName GetItems
+ * @apiGroup Items
+ * @apiDescription 모든 상품 목록을 조회한다.
+ *
+ * @apiParam {Number} page Page number
+ * @apiParam {Number} rows Number of outputs per page.
+ *
+ * @apiSuccess {String} message Next Page URL
+ * @apiSuccess {Array} result Items info
+ * @apiSuccessExample Success-Response:
+ *    HTTP/1.1 200 OK
+ *    {
+ *      "message": "다음 페이지 URL"
+ *      "result": [
+ *        {
+ *          "id": 1   // 상품 번호,
+ *          "bid": 2  // 브랜드 번호,
+ *          "name": "상품 이름",
+ *          "price": 11900   // 상품 가격,
+ *          "detail": "상품정보",
+ *          "notice": "주의사항",
+ *          "location": "상품 이미지 URL"
+ *        }, ...
+ *      ]
+ *    }
+ *
+ * @apiUse BadRequest
+ * @apiErrorExample Error-Response:
+ *    HTTP/1.1 400 Bad Request
+ *    {
+ *      "message": "All Items Listing Failed"
+ *    }
+ */
 router.get('/', logRequestParams(), isSecure, function (req, res, next) {
   var ipage = parseInt(req.query.page);
   var irows = parseInt(req.query.rows);
 
   if (!ipage || !irows) {
-    err = new Error('전체 상품 조회 실패');
+    err = new Error('All Items listing Failed');
     return next(err);
   }
 
   Item.printItems(ipage, irows, function (err, msg, items) {
     if (err || items.length == 0) {
-      err = new Error('전체 상품 조회 실패');
+      err = new Error('All Items listing Succeed');
       return next(err);
     } else {
       res.json({
@@ -60,19 +94,53 @@ router.get('/', logRequestParams(), isSecure, function (req, res, next) {
   });
 });
 
-//TODO 9번 상품권 상품 목록 조회 O
+/**
+ * @api {get} /items/voucher Vouchers listing
+ * @apiName GetVoucher
+ * @apiGroup Items
+ * @apiDescription 모든 상품권 목록을 조회한다.
+ *
+ * @apiParam {Number} page Page number
+ * @apiParam {Number} rows Number of outputs per page.
+ *
+ * @apiSuccess {String} message Next Page URL
+ * @apiSuccess {Array} result Items info
+ * @apiSuccessExample Success-Response:
+ *    HTTP/1.1 200 OK
+ *    {
+ *      "message": "다음 페이지 URL"
+ *      "result": [
+ *        {
+ *          "id": 1   // 상품 번호,
+ *          "bid": 2  // 브랜드 번호,
+ *          "name": "상품 이름",
+ *          "price": 11900   // 상품 가격,
+ *          "detail": "상품정보",
+ *          "notice": "주의사항",
+ *          "location": "상품 이미지 URL"
+ *        }, ...
+ *      ]
+ *    }
+ *
+ * @apiUse BadRequest
+ * @apiErrorExample Error-Response:
+ *    HTTP/1.1 400 Bad Request
+ *    {
+ *      "message": "All Voucher Listing Failed"
+ *    }
+ */
 router.get('/voucher', logRequestParams(), isSecure, function (req, res, next) {
   var page = parseInt(req.query.page);
   var rows = parseInt(req.query.rows);
 
   if (!page || !rows) {
-    err = new Error('상품권 상품 목록 조회 실패');
+    err = new Error('All Voucher Listing Failed');
     return next(err);
   }
 
   Item.printVoucherItems(page, rows,function(err, items, msg) {
     if (err) {
-      err = new Error('상품권 상품 목록 조회 실패');
+      err = new Error('All Voucher Listing Failed');
       return next(err);
     } else {
       res.json({
@@ -83,19 +151,40 @@ router.get('/voucher', logRequestParams(), isSecure, function (req, res, next) {
   });
 });
 
-// TODO 10번 '상품 상세' 조회 O
+/**
+ * @api {get} /items/:iid Item info
+ * @apiName GetItemsInfo
+ * @apiGroup Items
+ * @apiDescription iid에 해당하는 상품 정보를 조회한다.
+ *
+ * @apiSuccess {Array} result Items info
+ * @apiSuccessExample Success-Response:
+ *    HTTP/1.1 200 OK
+ *    {
+ *      "result": [
+ *        {
+ *          "id": 1   // 상품 번호,
+ *          "name": "상품 이름",
+ *          "price": 11900   // 상품 가격,
+ *          "detail": "상품정보",
+ *          "location": "상품 이미지 URL"
+ *        }
+ *      ]
+ *    }
+ *
+ * @apiUse BadRequest
+ * @apiErrorExample Error-Response:
+ *    HTTP/1.1 400 Bad Request
+ *    {
+ *      "message": "Item info Failed"
+ *    }
+ */
 router.get('/:iid', logRequestParams(), isSecure, function (req, res, next) {
   var iid = req.params.iid;
 
-  // var pattern = /[0-9]/;
-  // if (pattern.test(iid) === false) {
-  //   err = new Error('잘못된 결제 번호입니다.');
-  //   return next(err);
-  // }
-
   Item.showItemDetail(iid, function (err, item) {
     if (err || item.length === 0 ) {
-      err = new Error('상품 상세정보 조회 실패');
+      err = new Error('Item info Failed');
       return next(err);
     } else {
       res.json({

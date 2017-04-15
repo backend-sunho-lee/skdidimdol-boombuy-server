@@ -5,10 +5,30 @@ var isSecure = require('../common/security').isSecure;
 var isLoggedIn = require('../common/security').isLoggedIn;
 var logger = require('../common/logger');
 var logRequestParams = require('../common/logging').logRequestParams;
-// logRequestParams(global.app.get('env')),
 
-
-//TODO 12 친구 목록 업데이트
+/**
+ * @api {post} /friends Friends registration or change
+ * @apiName PostFriends
+ * @apiGroup Friends
+ * @apiDescription 사용자 전화번호부를 불러와 그 중에서 회원가입한 사용자를 친구로 등록한다.
+ *
+ * @apiParam {Array} phone phone number array
+ *
+ * @apiSuccess {String} result Brands info
+ * @apiSuccessExample Success-Response:
+ *    HTTP/1.1 200 OK
+ *    {
+ *      "message": "Friends registration or change Succeed"
+ *      ]
+ *    }
+ *
+ * @apiUse BadRequest
+ * @apiErrorExample Error-Response:
+ *    HTTP/1.1 400 Bad Request
+ *    {
+ *      "message": "Friends registration or change Failed"
+ *    }
+ */
 router.post('/', logRequestParams(), isSecure, isLoggedIn, function (req, res, next) {
    var uid = req.user.id;
    //var phonefriends = JSON.parse(req.body.phone);
@@ -16,6 +36,7 @@ router.post('/', logRequestParams(), isSecure, isLoggedIn, function (req, res, n
 
   if (!phonefriends) {
     err = new Error("No phones...");
+    err.status = 400;
     return next(err);
   }
   if(typeof(phonefriends) !== 'object') {
@@ -25,29 +46,61 @@ router.post('/', logRequestParams(), isSecure, isLoggedIn, function (req, res, n
 
     User.mappingUpdate(phonefriends, uid, function (err, result) {
         if (err) {
-            err = new Error("친구 등록 및 변경 실패");
+            err = new Error("Friends registration or change Failed");
             return next(err);
         }
 
         res.json({
-            message: '친구 등록 및 변경 성공'
+            message: 'Friends registration or change Succeed'
         });
     });
 });
 
-//TODO 13 친구 목록 출력
+/**
+ * @api {get} /friends Friends listing
+ * @apiName GetFriends
+ * @apiGroup Friends
+ * @apiDescription 사용자의 친구 목록을 불러온다.
+ *
+ * @apiSuccess {String} message Success Message
+ * @apiSuccess {Array} result Friends info
+ * @apiSuccessExample Success-Response:
+ *    HTTP/1.1 200 OK
+ *    {
+ *      "message": "다음 페이지 URL"
+ *      "result": [
+ *        {
+ *          "uid": 1   // 사용자 번호,
+ *          "phone": "사용자 전화번호",
+ *          "name": "사용자 이름",
+ *          "location": "상품 이미지 URL"
+ *        }, ...
+ *      ]
+ *    }
+ *    {
+ *      "message": "친구가 없습니다.",
+ *      "result": []
+ *    }
+ *
+ * @apiUse BadRequest
+ * @apiErrorExample Error-Response:
+ *    HTTP/1.1 400 Bad Request
+ *    {
+ *      "message": "Friends listing Failed"
+ *    }
+ */
 router.get('/', logRequestParams(), isSecure, isLoggedIn, function (req, res, next) {
   var uid = req.user.id;
 
   User.mappedFriendsPrint(uid, function(err, members, cnt) {
     if (err) {
-      err = new Error('친구목록 조회 실패');
+      err = new Error('Friends listing Failed');
       return next(err);
     }
 
-    var msg = '친구목록 조회 성공';
+    var msg = 'Friends listing Success';
     if (!cnt) {
-      msg = '친구가 없습니다.';
+      msg = 'No Friends';
     }
 
     res.json({
@@ -56,50 +109,5 @@ router.get('/', logRequestParams(), isSecure, isLoggedIn, function (req, res, ne
     });
   });
 });
-/*//TODO 13 친구 목록 출력 -페이징처리된것
-router.get('/', logRequestParams(), isSecure, isLoggedIn, function (req, res, next) {
-  var page = parseInt(req.query.page);
-  var rows = parseInt(req.query.rows);
-  var uid = req.user.id;
-
-  if (!page || !rows) {
-    err = new Error('친구목록 조회 실패');
-    return next(err);
-  }
-
-  User.mappedFriendsPrint(page, rows, uid, function(err, members, msg) {
-    if (err || members.length == 0) {
-      err = new Error('친구목록 조회 실패');
-      return next(err);
-    }
-
-    res.json({
-      message: msg,
-      result: members
-    });
-  });
-});*/
 
 module.exports = router;
-/*// TODO 11번 친구 목록 등록
- router.post('/', isSecure, isLoggedIn, function (req, res, next) {
- var uid = req.user.id;
- var phonefriend = JSON.parse(req.body.phone);
- var msg = '';
-
- // phonefriend.push('01047843821', '01022222232', '01051605855', '01085199709', '01090024034', '01069188808', '01069734541', '202122', '113');
-
- User.mappingFriend(phonefriend, uid, function (err, mUsers) {
- if (err) {
- err = new Error('친구 등록에 실패 했어요');
- next(err);
- }
-
- for (var i in mUsers)
- msg = msg + mUsers[i].phone + ', ';
-
- res.json({
- message: '친구 등록에 성공 했어요'
- });
- });
- });*/

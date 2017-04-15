@@ -40,42 +40,56 @@ var upload = multer({
   })
 });
 
-
-// 14번 주문 등록 _O
+/**
+ * @api {post} /orders Order Registration
+ * @apiName PostOrder
+ * @apiGroup Order
+ * @apiDescription 주문을 등록한다. 주문 등록 성공시, 선물 받는 사람과 보내는 사람들에게 FCM 알림을 보낸다.
+ *
+ * @apiParam {Number} receiver A friend to present
+ * @apiParam {Array} senders Friends to send gifts
+ * @apiParam {Array} carts Items to present
+ *
+ * @apiSuccess {String} message Success Message
+ * @apiSuccessExample Success-Response:
+ *    HTTP/1.1 200 OK
+ *    {
+ *      "message": "Order Registration Succeed"
+ *    }
+ *
+ * @apiUse BadRequest
+ * @apiErrorExample Error-Response:
+ *    HTTP/1.1 400 Bad Request
+ *    {
+ *      "message": "Order Registration Failed"
+ *    }
+ */
 router.post('/', logRequestParams(), isSecure, isLoggedIn, function (req, res, next) {
   var receiver = req.body.receiver;             // 1
   var senders = req.body.senders;
   var carts = req.body.carts;
-  //var senders = JSON.parse(req.body.senders);   // [{"uid": 1, "cost": 5000}, {}, {}]
-  //var carts = JSON.parse(req.body.carts);       // [1, 3, 5]
   var myphone = req.user.phone;
   var pattern = /[0-9]/;
 
-
   if (!receiver || !senders || !carts) {
-    err = new Error('주문 등록 실패!');
+    err = new Error('Order Registration Failed');
     return next(err);
   }
 
-
   var phoneBuckets = [];
   for (var i in senders) {
-
     if (senders[i].phone !== myphone) {
-      //       console.log(myphone +'aefafaefaf'+ senders[i].phone + 'bbbbbbbbbbb');
       phoneBuckets.push(senders[i].phone);
-      //     console.log(phoneBuckets+'mmmmmm');
     }
   }
+
   Order.makeOrder({
     receiver: receiver,
     senders: senders,
     carts: carts
   }, function (err, orderlist) {
-    if (err) {
-      // err = new Error('주문 등록 실패!');
+    if (err)
       return next(err);
-    }
 
     User.alaramForToken(phoneBuckets, function (err, tokens) {
       var apiKey = 'AAAAoDlYHZU:APA91bGSLmkIWpcvbZI98lZWUcUQMlhjmOySgolJ0MpxHKPgmlYRe8jR-wDOfJQCC1uTMR1A9vEO9-2Uc3I1h0UZGWH7EH_HR5QuETVMS1QQMkhnHq2e48-jTuzCOXsl0dJrzvcHiVIz';
@@ -105,13 +119,42 @@ router.post('/', logRequestParams(), isSecure, isLoggedIn, function (req, res, n
   })
 });
 
-// 보낸 선물 리스트 조회
+/**
+ * @api {get} /orders/send Sent orders listing
+ * @apiName GetSendOrder
+ * @apiGroup Order
+ * @apiDescription 사용자가 보낸 선물 목록을 조회한다.
+ *
+ * @apiSuccess {Array} result Sent orders listing
+ * @apiSuccessExample Success-Response:
+ *    HTTP/1.1 200 OK
+ *    {
+ *      "result": [
+ *        {
+ *          "oid": 10   // 주문번호,
+ *          "state": "진행중"  // 주문 진행 상태,
+ *          "orderstime": "2017-04-15T04:47:26.000Z"  // 주문등록 시간,
+ *          "receiver": "받는사람 이름",
+ *          "receiverphoto": "받는 사람 이미지 URL",
+ *          "sender": "보내는 사람 이름",
+ *          "senderphoto": "보내는 사람 중 대표 이미지 URL",
+ *          "cnt": 1  // 보내는 사람 중 대표자를 뺀 사람 수
+ *        },
+ *    }
+ *
+ * @apiUse BadRequest
+ * @apiErrorExample Error-Response:
+ *    HTTP/1.1 400 Bad Request
+ *    {
+ *      "message": "sent orders listing Failed"
+ *    }
+ */
 router.get('/send', logRequestParams(), isSecure, isLoggedIn, function (req, res, next) {
   var uid = req.user.phone;
 
   Order.printSendlist(uid, function (err, sendlist) {
     if (err) {
-      err = new Error('보낸 선물 조회 실패!');
+      err = new Error('Sent orders listing Failed');
       return next(err);
     }
 
@@ -120,30 +163,83 @@ router.get('/send', logRequestParams(), isSecure, isLoggedIn, function (req, res
     })
   })
 });
-/*// TODO 보낸 선물 리스트 조회 -페이징처리
- router.get('/send', logRequestParams(), isSecure, isLoggedIn, function (req, res, next) {
- var uid = req.user.phone;
- var page = parseInt(req.query.page);
- var rows = parseInt(req.query.rows);
- if (!page || !rows) {
- err = new Error('보낸 선물 조회 실패!');
- return next(err);
- }
+/*
+// 보낸 선물 리스트 조회 -페이징처리
+router.get('/send', logRequestParams(), isSecure, isLoggedIn, function (req, res, next) {
+  var uid = req.user.phone;
+  var page = parseInt(req.query.page);
+  var rows = parseInt(req.query.rows);
+  if (!page || !rows) {
+    err = new Error('보낸 선물 조회 실패!');
+    return next(err);
+  }
 
- Order.printSendlist(page, rows, uid, function (err, sendlist, msg) {
- if (err) {
- err = new Error('보낸 선물 조회 실패!');
- return next(err);
- }
+  Order.printSendlist(page, rows, uid, function (err, sendlist, msg) {
+    if (err) {
+      err = new Error('보낸 선물 조회 실패!');
+      return next(err);
+    }
 
- res.json({
- message: msg,
- result: sendlist
- })
- })
- });*/
+    res.json({
+      message: msg,
+      result: sendlist
+    })
+  })
+});
+*/
 
-// 보낸 선물 정보 조회
+/**
+ * @api {get} /orders/send/:oid Sent order info
+ * @apiName GetSendOrderInfo
+ * @apiGroup Order
+ * @apiDescription oid에 해당하는 보낸 선물의 정보를 조회한다.
+ *
+ * @apiParam {Number} oid Order number
+ *
+ * @apiSuccess {Array} message Success Message
+ * @apiSuccessExample Success-Response:
+ *    HTTP/1.1 200 OK
+ *    {
+ *      "result": [
+ *        "orders": {
+ *           "oid": 9   // 주문번호,
+ *           "state": "주문진행 상태",
+ *           "orderstime": "주문등록한 시간",
+ *           "receiver": "선물받을 사람",
+ *           "receiverphoto": "선물받을 사람 이미지 URL",
+ *           "sender": "선물보낸 사람 중 대표자",
+ *           "senderphoto": "대표자 이미지 URL",
+ *           "cnt": 0
+ *         },
+ *         "settlements": [
+ *           {
+ *             "oid": 9   // 주문번호,
+ *             "sender": "보내는사람 번호",
+ *             "name": "보내는사람 이름",
+ *             "cost": 10000  // 구매할 총 금액,
+ *             "state": "결제 상태",
+ *             "location": "보내는사람 이미지 URL"
+ *           }
+ *         ],
+ *         "carts": [
+ *           {
+ *             "oid": 9   // 주문번호,
+ *             "iid": 3   // 상품번호,
+ *             "name": "상품 이름",
+ *             "price": 24000   // 상품 가격,
+ *             "location": "상품 이미지 URL"
+ *           }, ...
+ *         ]
+ *       }
+ *    }
+ *
+ * @apiUse BadRequest
+ * @apiErrorExample Error-Response:
+ *    HTTP/1.1 400 Bad Request
+ *    {
+ *      "message": "Order info Failed"
+ *    }
+ */
 router.get('/send/:oid', logRequestParams(), isSecure, isLoggedIn, function (req, res, next) {
   var oid = req.params.oid;
   var uid = req.user.phone;
@@ -166,13 +262,42 @@ router.get('/send/:oid', logRequestParams(), isSecure, isLoggedIn, function (req
   })
 });
 
-// 16번 받은 선물 조회 _
+/**
+ * @api {get} /orders/receive Receive orders listing
+ * @apiName GetReceiveOrder
+ * @apiGroup Order
+ * @apiDescription 사용자가 받은 선물 목록을 조회한다.
+ *
+ * @apiSuccess {Array} result Receive Orders listing
+ * @apiSuccessExample Success-Response:
+ *    HTTP/1.1 200 OK
+ *    {
+ *      "result": [
+ *        {
+ *          "oid": 10   // 주문번호,
+ *          "state": "주문 진행 상태",
+ *          "orderstime": "주문등록 시간",
+ *          "receiver": "받는사람 이름",
+ *          "receiverphoto": "받는 사람 이미지 URL",
+ *          "sender": "보내는 사람 이름",
+ *          "senderphoto": "보내는 사람 중 대표 이미지 URL",
+ *          "cnt": 1  // 보내는 사람 중 대표자를 뺀 사람 수
+ *        },
+ *    }
+ *
+ * @apiUse BadRequest
+ * @apiErrorExample Error-Response:
+ *    HTTP/1.1 400 Bad Request
+ *    {
+ *      "message": "Receive orders listing Failed"
+ *    }
+ */
 router.get('/receive', logRequestParams(), isSecure, isLoggedIn, function (req, res, next) {
   var uid = req.user.phone;
 
   Order.printReceivedGift(uid, function (err, orderlists) {
     if (err) {
-      err = new Error('받은 선물 조회 실패!');
+      err = new Error('Receive orders listing Failed');
       return next(err);
     }
 
@@ -181,8 +306,8 @@ router.get('/receive', logRequestParams(), isSecure, isLoggedIn, function (req, 
     })
   })
 });
-// 16번 받은 선물 조회 -페이징처리
 /*
+ // 16번 받은 선물 조회 -페이징처리
  router.get('/receive', logRequestParams(), isSecure, isLoggedIn, function (req, res, next) {
  var phone = req.user.phone;
  var page = parseInt(req.query.page);
@@ -205,69 +330,32 @@ router.get('/receive', logRequestParams(), isSecure, isLoggedIn, function (req, 
  })
  });*/
 
-/*// 18번 결제 상태 변경
- router.put('/:oid', logRequestParams(), isSecure, isLoggedIn, function (req, res, next) {
- var oid = req.params.oid;
- var sender = req.user.phone;
-
- if (!oid) {
- err = new Error('결제 변경 실패');
- return next(err);
- }
- var pattern = /[0-9]/;
- if (pattern.test(oid) === false) {
- err = new Error('잘못된 주문 번호입니다.');
- return next(err);
- }
-
- var phonefortoken;
-
-
- Order.senderUpdate(oid, sender, function (err, msg, phonebuckets) {
- if (err) {
- err = new Error('결제 변경 실패');
- return next(err);
- }
-
-
- phonefortoken = phonebuckets;
- if (msg === ' 주문이 완료되었습니다.') {
-
- User.alaramForToken2(phonefortoken, function (err, tokens) {
- console.log(tokens + '22222222');
- if (err)
- return next(err);
-
- var apiKey = 'AAAAoDlYHZU:APA91bGSLmkIWpcvbZI98lZWUcUQMlhjmOySgolJ0MpxHKPgmlYRe8jR-wDOfJQCC1uTMR1A9vEO9-2Uc3I1h0UZGWH7EH_HR5QuETVMS1QQMkhnHq2e48-jTuzCOXsl0dJrzvcHiVIz';
- var fcm = new FCM(apiKey);
-
-
- var message = {
- registration_id: tokens, // required
- collapse_key: Math.floor(Math.random() * 10000),
- 'data.key1': 'receiver/' + oid
- };
-
- fcm.send(message, function (err, messageId) {
- if (err) {
- console.log("Something has gone wrong!");
- } else {
- console.log("Sent with message ID: ", messageId);
- }
- });
-
- });
- res.json({
- message: '결제 성공! ' + msg + ' 알람이 발송 됩니다.'
- });
- } else {
- res.json({
- message: '결제 성공! ' + msg
- });
- }
- });
- });*/
-// 18번 결제 상태 변경: 취소 or 완료
+/**
+ * @api {put} /orders/:oid Update settlement status
+ * @apiName PutOrder
+ * @apiGroup Order
+ * @apiDescription oid에 해당하는 사용자의 결제 상태를 변경한다.
+ *                 주문상태 변경 후, 모두 결제 완료 알림이 발송되고, 한명이 남았을 경우 독촉 알림이 발송된다.
+ *
+ * @apiParam {Number} oid Order number
+ *
+ * @apiSuccess {String} message Success Message
+ * @apiSuccessExample Success-Response:
+ *    HTTP/1.1 200 OK
+ *    {
+ *      "message": "결제 성공! 주문이 완료됐습니다. 알람이 발송 됩니다."
+ *    }
+ *    {
+ *      "message": "결제 성공! '가나다'님만 결제하면 주문이 완료됩니다."
+ *    }
+ *
+ * @apiUse BadRequest
+ * @apiErrorExample Error-Response:
+ *    HTTP/1.1 400 Bad Request
+ *    {
+ *      "message": "Order Registration Failed"
+ *    }
+ */
 router.put('/:oid', logRequestParams(), isSecure, isLoggedIn, function (req, res, next) {
   var oid = req.params.oid;
   var state = parseInt(req.body.state);
@@ -275,22 +363,13 @@ router.put('/:oid', logRequestParams(), isSecure, isLoggedIn, function (req, res
   var phonefortoken;
 
   if (!oid || !state) {
-    err = new Error('결제 변경 실패');
+    err = new Error('Update settlement status Failed');
     return next(err);
   }
-  // var pattern = /[1-2]/;
-  // if (pattern.test(oid) === false) {
-  //   err = new Error('잘못된 주문 번호입니다.');
-  //   return next(err);
-  // }
-  // if (pattern.test(state) === false) {
-  //   err = new Error('잘못된 주문 번호입니다.');
-  //   return next(err);
-  // }
 
   Order.senderUpdate(oid, state, sender, function (err, msg, phonebuckets) {
     if (err) {
-      err = new Error('결제 변경 실패');
+      err = new Error('Update settlement status Failed');
       return next(err);
     }
 
@@ -347,62 +426,4 @@ router.put('/:oid', logRequestParams(), isSecure, isLoggedIn, function (req, res
  });
  */
 
-
 module.exports = router;
-
-/*// TODO 14번 주문 등록 _O
- router.post('/', logRequestParams(), isSecure, isLoggedIn, function (req, res, next) {
- var receiver = req.body.receiver;             // 1
- // var senders = req.body.senders;
- // var carts = req.body.carts;
- var senders = JSON.parse(req.body.senders);   // [{"phone": 1, "cost": 5000}, {}, {}]
- var carts = JSON.parse(req.body.carts);       // [1, 3, 5]
-
- Order.makeOrder({
- receiver: receiver,
- senders: senders,
- carts: carts
- }, function (err, orderlist) {
- if (err) {
- err = new Error('주문 등록 실패!');
- return next(err);
- }
-
- res.json({
- message: '주문을 등록하였습니다.'
- });
- })
- });*/
-/*
- // TODO 15번 보낸 선물 조회 _
- router.get('/send', logRequestParams(), isSecure, isLoggedIn, function (req, res, next) {
- var uid = req.user.id;
-
- logger.log('debug', 'uid: %s, page: %s, rows: %s', uid);
-
- Order.printSentGift(uid, function (err, ordernums, sentGifts) {
- if (err) {
- err = new Error('보낸 선물 조회 실패!');
- return next(err);
- }
- console.log(ordernums + sentGifts + 'ggggggggg');
- res.json({
- result: sentGifts
- })
- })
- });
- */
-/*// TODO 17 번 주문 상태 변경
- router.put('/:oid', logRequestParams(), isSecure, function (req, res, next) {
- var oid = req.params.oid;
-
- Order.settlement(oid, function (err, msg) {
- if (err)
- return next(err);
-
- res.json({
- message: msg
- });
- });
-
- });*/
