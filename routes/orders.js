@@ -338,6 +338,7 @@ router.get('/receive', logRequestParams(), isSecure, isLoggedIn, function (req, 
  *                 주문상태 변경 후, 모두 결제 완료 알림이 발송되고, 한명이 남았을 경우 독촉 알림이 발송된다.
  *
  * @apiParam {Number} oid Order number
+ * @apiParam {Number} state Settlement State. 2 is ok, 1 is cancel
  *
  * @apiSuccess {String} message Success Message
  * @apiSuccessExample Success-Response:
