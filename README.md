@@ -30,14 +30,14 @@
 
 ## ERD
 
-![erd](/Users/sunny/boombuy_server/public/erd.png)
+![erd](https://github.com/sssunho/boombuy_server/blob/master/public/erd.png)
 
 
 
 
 ## 서버 아키텍처
 
-![server_architecture](/Users/sunny/boombuy_server/public/server_architecture.png)
+![server_architecture](https://github.com/sssunho/boombuy_server/blob/master/public/server_architecture.png)
 
 
 #### AWS
